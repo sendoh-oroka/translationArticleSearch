@@ -189,10 +189,10 @@ SOFTWARE.
   </style>
 </head>
 <body>
-  
+
   <div class="container">
     <div class="search-form">
-      <input type="text" id="authorInput" placeholder="Wikidot IDを入力">
+      <input type="text" id="authorInput" placeholder="Wikidot IDを入力" pattern="[a-zA-Z0-9\-_ ]+">
       <button id="searchButton">検索</button>
     </div>
 
@@ -375,7 +375,7 @@ SOFTWARE.
           return wljpArticle;
         }
       } else {
-        let oriArticle = articles.reduce((earliest, article) => 
+        let oriArticle = articles.reduce((earliest, article) =>
           article.createdAt < earliest.createdAt ? article : earliest, articles[0]
         );
 
@@ -384,7 +384,7 @@ SOFTWARE.
         } else {
           if (!oriArticle.name.includes(targetAuthor)) return null;
         }
-        
+
         const matched = WIKI_REGEXES.find(({ pattern, branch }) => pattern.test(oriArticle.url));
         if (matched) {
           oriArticle.branch = matched.branch;
@@ -401,6 +401,20 @@ SOFTWARE.
     const formatDate = (date) =>
       `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
 
+    const escapeHtml = (str) => {
+      if (!str) return "";
+      return str.replace(/[&<>"']/g, (match) => {
+        const escape = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        };
+        return escape[match];
+      });
+    };
+
     function buildPageHtml(node, targetAuthor) {
       const oriInfo = getOriInfo(node, targetAuthor);
       const jpInfo = getJPinfo(node);
@@ -411,7 +425,7 @@ SOFTWARE.
         return `
           <div class="untransPage">
             <p>
-              <strong>${oriInfo.branch}:</strong> <a href="${oriInfo.url}" target="_blank">${oriInfo.title}</a>
+              <strong>${oriInfo.branch}:</strong> <a href="${oriInfo.url}" target="_blank">${escapeHtml(oriInfo.title)}</a>
               <span class="postDate"> ${formatDate(oriInfo.createdAt)}投稿</span>
             </p>
           </div>
@@ -420,10 +434,10 @@ SOFTWARE.
 
       return `
         <div class="page">
-          <p><a href="${jpInfo.url}" target="_blank">${jpInfo.title}</a></p>
+          <p><a href="${jpInfo.url}" target="_blank">${escapeHtml(jpInfo.title)}</a></p>
           <p class="details">
             <strong>原語版:</strong>
-            <a href="${oriInfo.url}" target="_blank">${oriInfo.title}</a>
+            <a href="${oriInfo.url}" target="_blank">${escapeHtml(oriInfo.title)}</a>
             <span class="postDate"> ${formatDate(jpInfo.createdAt)}翻訳 ${formatDate(oriInfo.createdAt)}投稿</span>
           </p>
           <p class="details">
@@ -495,8 +509,15 @@ SOFTWARE.
       // 初回検索時のイベント設定
       searchButton.addEventListener("click", () => {
         const author = authorInput.value.trim();
+        const validPattern = /^[a-zA-Z0-9\-_ ]+$/;
+
         if (!author) {
           alert("Wikidot IDを入力してください");
+          return;
+        }
+
+        if (!validPattern.test(author)) {
+          alert("Wikidot IDに使用できない文字が含まれています。入力し直してください。");
           return;
         }
 
@@ -513,7 +534,7 @@ SOFTWARE.
   </script>
 
   <footer class="cromFooter">
-    <a href="https://crom.avn.sh/" target="_blank" rel="noopener">Powerd by Crom</a>
+    <a href="https://crom.avn.sh/" target="_blank" rel="noopener">Powered by Crom</a>
   </footer>
 </body>
 </html>
@@ -537,6 +558,9 @@ Wikidot IDを入力して検索ボタンを押すと、数秒後にその著者�
 [[div class="code"]]
 Created by sendoh-oroka 2025
 MIT License: https://github.com/sendoh-oroka/translationArticleSearch/blob/main/LICENSE
+
+[1.1.2] - 2025-12-26
+- escape処理など修正
 
 [1.1.1] - 2025-02-22
 - 全言語版Wikiに対応

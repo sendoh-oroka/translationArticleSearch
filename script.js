@@ -169,7 +169,7 @@ function parseInfo(node, targetAuthor = '', checkJP = false) {
       return wljpArticle;
     }
   } else {
-    let oriArticle = articles.reduce((earliest, article) => 
+    let oriArticle = articles.reduce((earliest, article) =>
       article.createdAt < earliest.createdAt ? article : earliest, articles[0]
     );
 
@@ -178,7 +178,6 @@ function parseInfo(node, targetAuthor = '', checkJP = false) {
     } else {
       if (!oriArticle.name.includes(targetAuthor)) return null;
     }
-    
     const matched = WIKI_REGEXES.find(({ pattern, branch }) => pattern.test(oriArticle.url));
     if (matched) {
       oriArticle.branch = matched.branch;
@@ -194,6 +193,19 @@ const getJPinfo = (node) => parseInfo(node, '', true);
 
 const formatDate = (date) =>
   `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+  const escapeHtml = (str) => {
+    if (!str) return "";
+    return str.replace(/[&<>"']/g, (match) => {
+      const escape = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return escape[match];
+  });
+};
 
 function buildPageHtml(node, targetAuthor) {
   const oriInfo = getOriInfo(node, targetAuthor);
@@ -205,7 +217,7 @@ function buildPageHtml(node, targetAuthor) {
     return `
       <div class="untransPage">
         <p>
-          <strong>${oriInfo.branch}:</strong> <a href="${oriInfo.url}" target="_blank">${oriInfo.title}</a>
+          <strong>${oriInfo.branch}:</strong> <a href="${oriInfo.url}" target="_blank">${escapeHtml(oriInfo.title)}</a>
           <span class="postDate"> ${formatDate(oriInfo.createdAt)}投稿</span>
         </p>
       </div>
@@ -214,10 +226,10 @@ function buildPageHtml(node, targetAuthor) {
 
   return `
     <div class="page">
-      <p><a href="${jpInfo.url}" target="_blank">${jpInfo.title}</a></p>
+      <p><a href="${jpInfo.url}" target="_blank">${escapeHtml(jpInfo.title)}</a></p>
       <p class="details">
         <strong>原語版:</strong>
-        <a href="${oriInfo.url}" target="_blank">${oriInfo.title}</a>
+        <a href="${oriInfo.url}" target="_blank">${escapeHtml(oriInfo.title)}</a>
         <span class="postDate"> ${formatDate(jpInfo.createdAt)}翻訳 ${formatDate(oriInfo.createdAt)}投稿</span>
       </p>
       <p class="details">
@@ -289,8 +301,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // 初回検索時のイベント設定
   searchButton.addEventListener("click", () => {
     const author = authorInput.value.trim();
+    const validPattern = /^[a-zA-Z0-9\-_ ]+$/;
     if (!author) {
       alert("Wikidot IDを入力してください");
+      return;
+    }
+    if (!validPattern.test(author)) {
+      alert("Wikidot IDに使用できない文字が含まれています。入力し直してください。");
       return;
     }
 
